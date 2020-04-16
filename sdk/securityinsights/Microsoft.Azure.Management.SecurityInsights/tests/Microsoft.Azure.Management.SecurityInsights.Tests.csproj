@@ -22,6 +22,5 @@
   <ItemGroup>
     <Folder Include="Helpers\" />
     <Folder Include="AlertRules\" />
-    <Folder Include="Actions\" />
   </ItemGroup>
 </Project>

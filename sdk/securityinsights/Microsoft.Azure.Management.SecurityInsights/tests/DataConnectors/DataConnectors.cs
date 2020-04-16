@@ -17,7 +17,7 @@ using Xunit;
 
 namespace SecurityInsights.Tests
 {
-    public class SecurityInsightsAlertRules : TestBase
+    public class SecurityInsightsDataConnectors : TestBase
     {
         #region Test setup
 
@@ -25,6 +25,9 @@ namespace SecurityInsights.Tests
         public static string strGuid = Guid.ToString();
         private static readonly string ResourceGroup = "AlertsRG";
         private static readonly string Workspace = "AlertsWS";
+        private static readonly string DataConnectorId = "b5bfa9e3-7be5-4dc2-be6c-cdbe1194ca1a";
+        private static readonly string MCASDataConnectorId = "bbbddcaa-625f-401d-8ed7-aa119b463a2d";
+        private static readonly string TenantId = "4b2462a4-bbee-495a-a0e1-f23ae524cc9c";
 
         public static TestEnvironment TestEnvironment { get; private set; }
 
@@ -47,44 +50,45 @@ namespace SecurityInsights.Tests
 
         #endregion
 
-        #region AlertRules
+        #region Actions
   
 
         [Fact]
 
-        public void SecurityInsightsAlertRules_CreateAlertRule()
+        public void SecurityInsightsDataConnectors_CreateDataConnector()
         {
             using (var context = MockContext.Start(this.GetType()))
             {
                 var securityInsightsClient = GetSecurityInsightsClient(context);
-                var Timespan = XmlConvert.ToTimeSpan("PT1H");
-                var queryFrequency = XmlConvert.ToTimeSpan("P1D");
-                var alertRuleProperties = new ScheduledAlertRule("test Rule", false, Timespan, false, severity:"low", query:"SecurityAlert", queryFrequency:queryFrequency, queryPeriod:queryFrequency, triggerOperator:Microsoft.Azure.Management.SecurityInsights.Models.TriggerOperator.GreaterThan, triggerThreshold:10);
-                var alertRule = securityInsightsClient.AlertRules.CreateOrUpdate(ResourceGroup, Workspace, strGuid, alertRuleProperties);
-                ValidateAlertRule(alertRule);
+                var AlertsDataTypeOfDataConnectorAlerts = new AlertsDataTypeOfDataConnectorAlerts("enabled");
+                var AlertsDataTypeOfDataConnector = new AlertsDataTypeOfDataConnector(AlertsDataTypeOfDataConnectorAlerts);
+                var DataConnectorProperties = new AATPDataConnector(DataConnectorId, tenantId: TenantId, dataTypes: AlertsDataTypeOfDataConnector);
+                var DataConnector = securityInsightsClient.DataConnectors.CreateOrUpdate(ResourceGroup, Workspace, DataConnectorId, DataConnectorProperties);
+                ValidateDataConnector(DataConnector);
+                //Thread.Sleep(30000);
             }
         }
 
         [Fact]
-        public void SecurityInsightsAlertRules_List()
+        public void SecurityInsightsDataConnectors_GetDataConnectors()
         {
             using (var context = MockContext.Start(this.GetType()))
             {
                 var securityInsightsClient = GetSecurityInsightsClient(context);
-                var alertRules = securityInsightsClient.AlertRules.List(ResourceGroup, Workspace);
-                ValidateAlertRules(alertRules);
+                var DataConnectors = securityInsightsClient.DataConnectors.List(ResourceGroup, Workspace);
+                ValidateDataConnectors(DataConnectors);
             }
         }
 
         [Fact]
 
-        public void SecurityInsightsAlertRules_GetAlertRule()
+        public void SecurityInsightsDataConnectors_GetDataConnector()
         {
             using (var context = MockContext.Start(this.GetType()))
             {
                 var securityInsightsClient = GetSecurityInsightsClient(context);
-                var alertRule = securityInsightsClient.AlertRules.Get(ResourceGroup, Workspace, "396013d7-8926-4420-beb6-c8d9dd6dc456");
-                ValidateAlertRule(alertRule);
+                var DataConnector = securityInsightsClient.DataConnectors.Get(ResourceGroup, Workspace, MCASDataConnectorId);
+                ValidateDataConnector(DataConnector);
             }
         }
 
@@ -92,12 +96,12 @@ namespace SecurityInsights.Tests
 
         [Fact]
         
-        public void SecurityInsightsAlertRules_DeleteAlertRule()
+        public void SecurityInsightsDataConnectors_DeleteDataConnector()
         {
             using (var context = MockContext.Start(this.GetType()))
             {
                 var securityInsightsClient = GetSecurityInsightsClient(context);
-                securityInsightsClient.AlertRules.Delete(ResourceGroup, Workspace, strGuid);
+                securityInsightsClient.DataConnectors.Delete(ResourceGroup, Workspace, DataConnectorId);
             }
         }
    
@@ -105,16 +109,16 @@ namespace SecurityInsights.Tests
 
         #region Validations
 
-        private void ValidateAlertRules(IPage<AlertRule> alertRulePage)
+        private void ValidateDataConnectors(IPage<DataConnector> DataConnectorPage)
         {
-            Assert.True(alertRulePage.IsAny());
+            Assert.True(DataConnectorPage.IsAny());
 
-            alertRulePage.ForEach(ValidateAlertRule);
+            DataConnectorPage.ForEach(ValidateDataConnector);
         }
 
-        private void ValidateAlertRule(AlertRule alertRule)
+        private void ValidateDataConnector(DataConnector DataConnector)
         {
-            Assert.NotNull(alertRule);
+            Assert.NotNull(DataConnector);
         }
 
         #endregion

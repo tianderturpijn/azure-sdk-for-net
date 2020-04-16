@@ -17,7 +17,7 @@ using Xunit;
 
 namespace SecurityInsights.Tests
 {
-    public class SecurityInsightsAlertRules : TestBase
+    public class SecurityInsightsActions : TestBase
     {
         #region Test setup
 
@@ -25,6 +25,11 @@ namespace SecurityInsights.Tests
         public static string strGuid = Guid.ToString();
         private static readonly string ResourceGroup = "AlertsRG";
         private static readonly string Workspace = "AlertsWS";
+        private static readonly string AlertId = "7672aeff-e565-4a00-a858-58486d38ef94";
+        private static readonly string AlertId2 = "396013d7-8926-4420-beb6-c8d9dd6dc456";
+        private static readonly string ActionId = "553f9438-44f9-43fd-bd4f-70ca14f4c82d";
+        private static readonly string LogicAppResourceId = "/subscriptions/44e4eff8-1fcb-4a22-a7d6-992ac7286382/resourceGroups/AlertsRG/providers/Microsoft.Logic/workflows/AlertWSPlaybook";
+        private static readonly string triggerUri = "https://prod-18.centralus.logic.azure.com:443/workflows/75f1358b52b249bdb7ba28538582ab25/triggers/When_a_response_to_an_Azure_Sentinel_alert_is_triggered/paths/invoke?api-version=2018-07-01-preview&sp=%2Ftriggers%2FWhen_a_response_to_an_Azure_Sentinel_alert_is_triggered%2Frun&sv=1.0&sig=hkKKGdyJVke1uyOVaYzJysj5aSlNL-SkQ2FMdcDd2uE";
 
         public static TestEnvironment TestEnvironment { get; private set; }
 
@@ -47,44 +52,43 @@ namespace SecurityInsights.Tests
 
         #endregion
 
-        #region AlertRules
+        #region Actions
   
 
         [Fact]
 
-        public void SecurityInsightsAlertRules_CreateAlertRule()
+        public void SecurityInsightsActions_CreateAction()
         {
             using (var context = MockContext.Start(this.GetType()))
             {
                 var securityInsightsClient = GetSecurityInsightsClient(context);
-                var Timespan = XmlConvert.ToTimeSpan("PT1H");
-                var queryFrequency = XmlConvert.ToTimeSpan("P1D");
-                var alertRuleProperties = new ScheduledAlertRule("test Rule", false, Timespan, false, severity:"low", query:"SecurityAlert", queryFrequency:queryFrequency, queryPeriod:queryFrequency, triggerOperator:Microsoft.Azure.Management.SecurityInsights.Models.TriggerOperator.GreaterThan, triggerThreshold:10);
-                var alertRule = securityInsightsClient.AlertRules.CreateOrUpdate(ResourceGroup, Workspace, strGuid, alertRuleProperties);
-                ValidateAlertRule(alertRule);
+                var ActionRequestProperties = new ActionRequest(LogicAppResourceId, triggerUri: triggerUri);
+                var Action = securityInsightsClient.AlertRules.CreateOrUpdateAction(ResourceGroup, Workspace, AlertId, strGuid, ActionRequestProperties);
+                ValidateAction(Action);
+                //Thread.Sleep(30000);
             }
         }
 
         [Fact]
-        public void SecurityInsightsAlertRules_List()
+        public void SecurityInsightsActions_GetActions()
         {
             using (var context = MockContext.Start(this.GetType()))
             {
                 var securityInsightsClient = GetSecurityInsightsClient(context);
-                var alertRules = securityInsightsClient.AlertRules.List(ResourceGroup, Workspace);
-                ValidateAlertRules(alertRules);
+                var Actions = securityInsightsClient.Actions.ListByAlertRule(ResourceGroup, Workspace, AlertId2);
+                ValidateActions(Actions);
             }
         }
 
         [Fact]
 
-        public void SecurityInsightsAlertRules_GetAlertRule()
+        public void SecurityInsightsActions_GetAction()
         {
             using (var context = MockContext.Start(this.GetType()))
             {
                 var securityInsightsClient = GetSecurityInsightsClient(context);
-                var alertRule = securityInsightsClient.AlertRules.Get(ResourceGroup, Workspace, "396013d7-8926-4420-beb6-c8d9dd6dc456");
-                ValidateAlertRule(alertRule);
+                var Action = securityInsightsClient.AlertRules.GetAction(ResourceGroup, Workspace, AlertId2, ActionId);
+                ValidateAction(Action);
             }
         }
 
@@ -92,12 +96,12 @@ namespace SecurityInsights.Tests
 
         [Fact]
         
-        public void SecurityInsightsAlertRules_DeleteAlertRule()
+        public void SecurityInsightsActions_DeleteAction()
         {
             using (var context = MockContext.Start(this.GetType()))
             {
                 var securityInsightsClient = GetSecurityInsightsClient(context);
-                securityInsightsClient.AlertRules.Delete(ResourceGroup, Workspace, strGuid);
+                securityInsightsClient.AlertRules.DeleteAction(ResourceGroup, Workspace, AlertId, strGuid);
             }
         }
    
@@ -105,16 +109,16 @@ namespace SecurityInsights.Tests
 
         #region Validations
 
-        private void ValidateAlertRules(IPage<AlertRule> alertRulePage)
+        private void ValidateActions(IPage<ActionResponse> ActionPage)
         {
-            Assert.True(alertRulePage.IsAny());
+            Assert.True(ActionPage.IsAny());
 
-            alertRulePage.ForEach(ValidateAlertRule);
+            ActionPage.ForEach(ValidateAction);
         }
 
-        private void ValidateAlertRule(AlertRule alertRule)
+        private void ValidateAction(ActionResponse Action)
         {
-            Assert.NotNull(alertRule);
+            Assert.NotNull(Action);
         }
 
         #endregion
